@@ -40,6 +40,10 @@
         for (var n = 0 ; n < from.length ; n++)
           map[e.name][from[n]] = e.to || from[n]; // allow no-op transition if 'to' is not specified
       };
+      
+      fsm['clean'] = function(name) {
+          return name.replace(/:/g, '');
+      };
 
       if (initial) {
         initial.event = initial.event || 'startup';
@@ -51,12 +55,12 @@
 
       for(var name in map) {
         if (map.hasOwnProperty(name))
-          fsm[name] = StateMachine.buildEvent(name, map[name]);
+          fsm[fsm.clean(name)] = StateMachine.buildEvent(name, map[name]);
       }
 
       for(var name in callbacks) {
         if (callbacks.hasOwnProperty(name))
-          fsm[name] = callbacks[name]
+          fsm[fsm.clean(name)] = callbacks[name]
       }
 
       fsm.current = 'none';
@@ -85,13 +89,25 @@
       }
     },
 
-    beforeEvent: function(fsm, name, from, to, args) { return StateMachine.doCallback(fsm, fsm['onbefore' + name],                     name, from, to, args); },
-    afterEvent:  function(fsm, name, from, to, args) { return StateMachine.doCallback(fsm, fsm['onafter'  + name] || fsm['on' + name], name, from, to, args); },
-    leaveState:  function(fsm, name, from, to, args) { return StateMachine.doCallback(fsm, fsm['onleave'  + from],                     name, from, to, args); },
-    enterState:  function(fsm, name, from, to, args) { return StateMachine.doCallback(fsm, fsm['onenter'  + to]   || fsm['on' + to],   name, from, to, args); },
-    changeState: function(fsm, name, from, to, args) { return StateMachine.doCallback(fsm, fsm['onchangestate'],                       name, from, to, args); },
+    beforeEvent: function(fsm, name, from, to, args) { return StateMachine.doCallback(fsm, fsm['onBefore' + fsm.clean(name)],                     name, from, to, args); },
+    afterEvent:  function(fsm, name, from, to, args) { return StateMachine.doCallback(fsm, fsm['onAfter'  + fsm.clean(name)] || fsm['on' + fsm.clean(name)], name, from, to, args); },
+    leaveState:  function(fsm, name, from, to, args) { return StateMachine.doCallback(fsm, fsm['onLeave'  + from],                     name, from, to, args); },
+    enterState:  function(fsm, name, from, to, args) { return StateMachine.doCallback(fsm, fsm['onEnter'  + to]   || fsm['on' + to],   name, from, to, args); },
+    changeState: function(fsm, name, from, to, args) { return StateMachine.doCallback(fsm, fsm['onChangeState'],                       name, from, to, args); },
 
 
+    /**
+     * If transition exists:
+     * beforeEvent
+     * leaveState
+     * enterState
+     * changeState
+     * afterEvent
+     * 
+     * If no transition:
+     * beforeEvent
+     * afterEvent
+     */
     buildEvent: function(name, map) {
       return function() {
 
